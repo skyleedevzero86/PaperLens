@@ -1,6 +1,6 @@
 # PaperLens (PdfStudy)
 
-<br/>
+
 ![PaperLens - AI 문서 검색 및 분석](imgs/이미지.jpg)
 
 <br/>
