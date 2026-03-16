@@ -1,6 +1,6 @@
 <template>
   <div
-    class="card p-4 cursor-pointer hover:shadow-md transition-all hover:border-primary-200 group"
+    class="card card-elevated p-4 cursor-pointer hover:border-primary-200 group"
     @click="$emit('click')"
   >
     <div class="flex items-start justify-between mb-3">
