@@ -1,6 +1,5 @@
 # PaperLens (PdfStudy)
 
-
 ![PaperLens - AI 문서 검색 및 분석](imgs/이미지.jpg)
 
 <br/>
@@ -196,3 +195,76 @@ erDiagram
 | **Backend**  | Spring Boot 3.3, Kotlin 2.0, Spring Security, JPA, Spring AI (OpenAI / Transformers), JWT, Flyway, PDFBox, Tika |
 | **DB**       | PostgreSQL 16 + pgvector (벡터 검색), Redis 7                                                                   |
 | **인프라**   | Docker Compose (PostgreSQL, Redis)                                                                              |
+
+---
+
+## 5. 프로젝트 디렉터리 구조
+
+이 저장소(`PdfStudy`)는 PaperLens의 설계/실험용 공간으로, 실제 애플리케이션과 UI 프로토타입을 함께 관리합니다.
+
+```text
+PdfStudy/
+├─ README.md                  # 현재 문서
+├─ frontend/                  # 최신 Vue 3 + Vite 기반 실제 SPA 프론트엔드
+│  ├─ index.html
+│  ├─ vite.config.ts
+│  ├─ tsconfig*.json
+│  ├─ src/
+│  │  ├─ main.ts              # 앱 엔트리
+│  │  ├─ App.vue
+│  │  ├─ router/              # 라우팅 (로그인, 문서 목록/상세, 관리자 등)
+│  │  ├─ stores/              # Pinia 스토어 (auth, document 등)
+│  │  ├─ layouts/             # `AppLayout` 등 공통 레이아웃
+│  │  ├─ views/               # 페이지 단위 뷰
+│  │  └─ components/          # 공통/도메인 컴포넌트
+│  └─ package.json            # `frontend` 앱 의존성 정의
+│
+├─ docs/
+│  ├─ frontend/               # PaperLens UI/플로우를 문서화하는 샘플/데모 앱
+│  │  ├─ index.html
+│  │  ├─ vite.config.ts
+│  │  ├─ src/
+│  │  │  ├─ layouts/AppLayout.vue
+│  │  │  ├─ components/
+│  │  │  │  ├─ document/      # `DocumentCard`, `UploadModal` 등 문서 카드/업로드 UI
+│  │  │  │  ├─ viewer/        # `PdfViewer` 등 뷰어 관련 컴포넌트
+│  │  │  │  ├─ ai/            # `QaPanel`, `SimilarDocuments` 등 AI 패널
+│  │  │  │  └─ common/        # `StatusBadge` 등 공통 컴포넌트
+│  │  └─ package.json         # docs 용 프론트엔드 의존성
+│  └─ commit.md               # 프론트엔드 관련 커밋 요약 템플릿
+│
+└─ imgs/                      # README에서 사용하는 이미지 자산
+```
+
+간단히 요약하면:
+
+- **`frontend/`**: 실제 서비스용 SPA 프론트엔드 코드
+- **`docs/frontend/`**: 문서/프로토타입용 프론트엔드 (UX 플로우를 설명하는 데 사용)
+
+---
+
+## 6. 백엔드 패키지 구조(요약)
+
+PaperLens 백엔드는 별도 모듈/저장소에서 관리되지만, 전반적인 패키지 구조는 다음과 같이 구성됩니다.
+
+```mermaid
+flowchart TD
+    A[com.sleekydz86.paperlens] --> B[domain]
+    A --> C[application]
+    A --> D[infrastructure]
+
+    D --> D1[web\n(AuthController,\nDocumentController,\nSearchController,\nAiController,\nAdminController,\nViewerController)]
+    D --> D2[persistence\n(entity, repository,\nmapper, adapter)]
+    D --> D3[global.config\n(SecurityConfig,\nApplicationConfig,\nCustomUserDetailsService)]
+    D --> D4[global.adapter\n(PdfAdapter,\nEmbeddingAdapter,\nVectorSearchAdapter,\nFileStorageAdapter,\nTokenAdapter,\nAiAdapter,\nAuthAdapter,\nDocumentProcessAdapter,\nQueryLogAdapter)]
+    D --> D5[global.search\n(KeywordSearch,\nSemanticSearch,\nHybridSearch,\nFuzzySearch)]
+```
+
+- **`web`**: REST 컨트롤러 계층 (인증, 문서, 검색, AI, 관리자, 뷰어 엔드포인트)
+- **`persistence`**: JPA 엔티티, 리포지토리, 매퍼, 도메인 리포지토리 어댑터
+- **`global.config`**: Spring Security, 애플리케이션 전역 설정
+- **`global.adapter`**: PDF 파싱, 임베딩/벡터 검색, 파일 스토리지, 토큰 계산, AI/인증/배치 처리 어댑터
+- **`global.search`**: 키워드/의미/하이브리드/퍼지 검색 전략
+
+위 구조를 기준으로 프론트엔드(`frontend/`)는 `/api/*` 엔드포인트를 통해 백엔드의 `web` 계층과 통신하며, 검색/AI/문서 관리 흐름을 하나의 워크스페이스 UI로 묶어 제공합니다.
+
