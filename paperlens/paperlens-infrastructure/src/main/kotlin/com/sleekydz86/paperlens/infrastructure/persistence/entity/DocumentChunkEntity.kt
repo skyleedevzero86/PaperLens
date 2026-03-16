@@ -30,6 +30,14 @@ class DocumentChunkEntity(
 
     val createdAt: LocalDateTime = LocalDateTime.now(),
 ) {
+    protected constructor() : this(
+        document = DocumentEntity(),
+        pageFrom = 0,
+        pageTo = 0,
+        chunkIndex = 0,
+        content = "",
+    )
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
