@@ -49,7 +49,7 @@ class DocumentEntity(
     @OneToMany(mappedBy = "document", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     val chunks: MutableList<DocumentChunkEntity> = mutableListOf(),
 ) {
-    protected constructor() : this(
+    internal constructor() : this(
         id = 0,
         title = "",
         description = null,

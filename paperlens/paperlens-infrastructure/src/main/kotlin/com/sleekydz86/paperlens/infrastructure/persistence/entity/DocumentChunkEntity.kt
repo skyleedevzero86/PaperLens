@@ -30,7 +30,7 @@ class DocumentChunkEntity(
 
     val createdAt: LocalDateTime = LocalDateTime.now(),
 ) {
-    protected constructor() : this(
+    internal constructor() : this(
         document = DocumentEntity(),
         pageFrom = 0,
         pageTo = 0,

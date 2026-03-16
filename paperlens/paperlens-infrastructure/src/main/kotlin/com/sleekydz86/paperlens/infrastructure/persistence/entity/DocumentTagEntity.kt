@@ -15,5 +15,5 @@ class DocumentTagEntity(
     @Column(nullable = false)
     val tagName: String,
 ) {
-    protected constructor() : this(document = DocumentEntity(), tagName = "")
+    internal constructor() : this(document = DocumentEntity(), tagName = "")
 }
