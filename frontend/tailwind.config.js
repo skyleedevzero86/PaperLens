@@ -13,6 +13,7 @@ export default {
           500: '#3b82f6',
           600: '#2563eb',
           700: '#1d4ed8',
+          800: '#1e40af',
         },
         surface: {
           50: '#f8fafc',

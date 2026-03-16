@@ -30,6 +30,14 @@ class UserEntity(
     var deletedAt: LocalDateTime? = null,
 ) : UserDetails {
 
+
+    protected constructor() : this(
+        id = 0,
+        email = "",
+        password = "",
+        name = "",
+    )
+
     override fun getUsername(): String = email
     override fun getPassword(): String = password
     override fun getAuthorities(): Collection<GrantedAuthority> =
