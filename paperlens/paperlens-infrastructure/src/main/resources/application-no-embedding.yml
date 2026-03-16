@@ -1,0 +1,5 @@
+# Legacy: no-embedding profile. Default behavior now excludes ONNX embedding; use profile 'embedding' to enable it.
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.model.transformers.autoconfigure.TransformersEmbeddingModelAutoConfiguration

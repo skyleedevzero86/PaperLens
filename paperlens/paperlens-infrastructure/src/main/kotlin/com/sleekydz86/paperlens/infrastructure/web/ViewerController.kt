@@ -1,9 +1,12 @@
 package com.sleekydz86.paperlens.infrastructure.web
 
 import com.sleekydz86.paperlens.domain.port.DocumentRepositoryPort
+import org.springframework.http.ContentDisposition
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -16,9 +19,12 @@ class ViewerController(private val documentRepository: DocumentRepositoryPort) {
         val doc = documentRepository.findById(id)
             ?: throw NoSuchElementException("Document not found")
         val bytes = Files.readAllBytes(Paths.get(doc.storagePath))
+        val disposition = ContentDisposition.inline()
+            .filename(doc.originalFileName, StandardCharsets.UTF_8)
+            .build()
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_PDF)
-            .header("Content-Disposition", "inline; filename=\"${doc.originalFileName}\"")
+            .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
             .body(bytes)
     }
 
