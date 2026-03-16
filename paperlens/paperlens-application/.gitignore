@@ -1,6 +1,3 @@
-application.yml
-paperlens-domain/gradle/
-paperlens-application/gradle/
 HELP.md
 .gradle
 build/
