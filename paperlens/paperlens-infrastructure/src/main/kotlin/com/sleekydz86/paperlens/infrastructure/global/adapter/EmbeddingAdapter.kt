@@ -2,10 +2,12 @@ package com.sleekydz86.paperlens.infrastructure.global.adapter
 
 import com.sleekydz86.paperlens.application.port.EmbeddingPort
 import org.springframework.ai.embedding.EmbeddingModel
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 
 @Component
 class EmbeddingAdapter(
+    @Lazy
     private val embeddingModel: EmbeddingModel,
 ) : EmbeddingPort {
 

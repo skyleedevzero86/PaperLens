@@ -3,10 +3,12 @@ package com.sleekydz86.paperlens.infrastructure.global.adapter
 import com.sleekydz86.paperlens.application.dto.SummaryResult
 import com.sleekydz86.paperlens.application.port.AiPort
 import org.springframework.ai.chat.client.ChatClient
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 
 @Component
 class AiAdapter(
+    @Lazy
     private val chatClient: ChatClient,
 ) : AiPort {
 
