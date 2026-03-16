@@ -9,5 +9,6 @@ class PasswordEncoderAdapter(
     private val delegate: PasswordEncoder,
 ) : PasswordEncoderPort {
 
-    override fun encode(rawPassword: String): String = delegate.encode(rawPassword)
+    override fun encode(rawPassword: String): String =
+        delegate.encode(rawPassword) ?: error("Password encoder returned null")
 }

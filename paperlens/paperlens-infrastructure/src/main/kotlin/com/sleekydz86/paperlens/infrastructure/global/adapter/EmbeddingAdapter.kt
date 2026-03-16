@@ -9,15 +9,7 @@ class EmbeddingAdapter(
     private val embeddingModel: EmbeddingModel,
 ) : EmbeddingPort {
 
-    override fun embed(text: String): FloatArray {
-        val response = embeddingModel.embedForResponse(listOf(text))
-        return response.results[0].output.toFloatArray()
-    }
+    override fun embed(text: String): FloatArray = embeddingModel.embed(text)
 
-    override fun embedBatch(texts: List<String>): List<FloatArray> {
-        val response = embeddingModel.embedForResponse(texts)
-        return response.results.map { it.output.toFloatArray() }
-    }
-
-    private fun List<Double>.toFloatArray(): FloatArray = FloatArray(size) { this[it].toFloat() }
+    override fun embedBatch(texts: List<String>): List<FloatArray> = embeddingModel.embed(texts)
 }

@@ -8,11 +8,11 @@ import com.sleekydz86.paperlens.domain.document.DocumentChunk
 import com.sleekydz86.paperlens.domain.document.DocumentStatus
 import com.sleekydz86.paperlens.domain.port.DocumentChunkRepositoryPort
 import com.sleekydz86.paperlens.domain.port.DocumentRepositoryPort
+import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.text.PDFTextStripper
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
-import java.io.ByteArrayInputStream
 import java.time.LocalDateTime
 
 @Component
@@ -58,7 +58,7 @@ class DocumentProcessAdapter(
 
     private fun extractAndChunk(documentId: Long, fileBytes: ByteArray): List<DocumentChunk> {
         val chunks = mutableListOf<DocumentChunk>()
-        PDDocument.load(ByteArrayInputStream(fileBytes)).use { pdf ->
+        Loader.loadPDF(fileBytes).use { pdf ->
             val stripper = PDFTextStripper()
             val totalPages = pdf.numberOfPages
             var chunkIndex = 0
