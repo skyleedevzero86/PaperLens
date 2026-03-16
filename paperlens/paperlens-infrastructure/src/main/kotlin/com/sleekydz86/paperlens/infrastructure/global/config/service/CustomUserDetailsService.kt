@@ -13,5 +13,5 @@ class CustomUserDetailsService(
 
     override fun loadUserByUsername(username: String) =
         userJpaRepository.findByEmail(username)
-            ?: throw UsernameNotFoundException("User not found: $username")
+            ?: throw UsernameNotFoundException("해당 이메일로 등록된 사용자가 없습니다.")
 }

@@ -30,7 +30,7 @@ class DocumentProcessAdapter(
         try {
             documentRepository.save(document.withStatus(DocumentStatus.PROCESSING))
             chunkRepository.deleteByDocumentId(documentId)
-            val bytes = fileStorage.read(document.storagePath) ?: throw IllegalStateException("File not found")
+            val bytes = fileStorage.read(document.storagePath) ?: throw IllegalStateException("파일을 찾을 수 없습니다.")
             val chunks = extractAndChunk(documentId, bytes)
             chunkRepository.saveAll(chunks)
 

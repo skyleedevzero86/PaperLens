@@ -110,8 +110,9 @@ async function sendQuestion(question: string) {
     })
     msg.answer = res.data.answer
     msg.sources = res.data.sources
-  } catch {
-    msg.answer = '답변을 생성하는 중 오류가 발생했습니다.'
+  } catch (err: any) {
+    const serverMessage = err.response?.data?.message
+    msg.answer = typeof serverMessage === 'string' ? serverMessage : '답변을 생성하는 중 오류가 발생했습니다.'
   } finally {
     msg.loading = false
     isLoading.value = false

@@ -17,7 +17,7 @@ class ViewerController(private val documentRepository: DocumentRepositoryPort) {
     @GetMapping("/{id}/stream")
     fun streamPdf(@PathVariable id: Long): ResponseEntity<ByteArray> {
         val doc = documentRepository.findById(id)
-            ?: throw NoSuchElementException("Document not found")
+            ?: throw NoSuchElementException("문서를 찾을 수 없습니다.")
         val bytes = Files.readAllBytes(Paths.get(doc.storagePath))
         val disposition = ContentDisposition.inline()
             .filename(doc.originalFileName, StandardCharsets.UTF_8)
@@ -31,7 +31,7 @@ class ViewerController(private val documentRepository: DocumentRepositoryPort) {
     @GetMapping("/{id}/info")
     fun getInfo(@PathVariable id: Long): ResponseEntity<Map<String, Any>> {
         val doc = documentRepository.findById(id)
-            ?: throw NoSuchElementException("Document not found")
+            ?: throw NoSuchElementException("문서를 찾을 수 없습니다.")
         return ResponseEntity.ok(
             mapOf(
                 "id" to doc.id,

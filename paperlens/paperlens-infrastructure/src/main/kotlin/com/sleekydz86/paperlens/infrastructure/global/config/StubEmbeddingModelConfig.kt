@@ -1,5 +1,6 @@
 package com.sleekydz86.paperlens.infrastructure.global.config
 
+import com.sleekydz86.paperlens.application.exception.EmbeddingNotAvailableException
 import org.springframework.ai.document.Document
 import org.springframework.ai.embedding.EmbeddingModel
 import org.springframework.ai.embedding.EmbeddingRequest
@@ -14,9 +15,9 @@ class StubEmbeddingModelConfig {
 
     @Bean
     fun embeddingModel(): EmbeddingModel = object : EmbeddingModel {
-        private fun fail(): Nothing = throw IllegalStateException(
-            "Embedding is not enabled. Start with profile 'embedding' (e.g. --spring.profiles.active=embedding) and ensure " +
-                "spring.ai.embedding.transformer.onnx.modelUri points to a valid ONNX file."
+        private fun fail(): Nothing = throw EmbeddingNotAvailableException(
+            "임베딩이 비활성화되어 있습니다. 프로필 'embedding'으로 기동(예: --spring.profiles.active=embedding) 후 " +
+                "spring.ai.embedding.transformer.onnx.modelUri에 유효한 ONNX 파일 경로를 설정하세요."
         )
         override fun call(request: EmbeddingRequest): EmbeddingResponse = fail()
         override fun embed(document: Document): FloatArray = fail()

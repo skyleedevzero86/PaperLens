@@ -8,12 +8,14 @@ import com.sleekydz86.paperlens.infrastructure.persistence.mapper.DocumentMapper
 import com.sleekydz86.paperlens.infrastructure.persistence.repository.DocumentJpaRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 
 @Component
 class DocumentRepositoryAdapter(
     private val jpaRepository: DocumentJpaRepository,
 ) : DocumentRepositoryPort {
 
+    @Transactional
     override fun save(document: Document): Document {
         val entity = if (document.id == 0L) {
             DocumentMapper.toEntity(document)
