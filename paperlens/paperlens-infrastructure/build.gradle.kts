@@ -45,3 +45,9 @@ dependencyManagement {
 tasks.bootJar {
 	archiveFileName.set("paperlens-backend.jar")
 }
+
+tasks.test {
+	testLogging {
+		showStandardStreams = true
+	}
+}

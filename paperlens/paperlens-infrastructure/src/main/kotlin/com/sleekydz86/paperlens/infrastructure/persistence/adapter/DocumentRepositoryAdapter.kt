@@ -32,7 +32,8 @@ class DocumentRepositoryAdapter(
 
     override fun searchDocuments(keyword: String?, docType: String?, page: Int, size: Int): PageResult<Document> {
         val pageable = PageRequest.of(page, size)
-        val result = jpaRepository.searchDocuments(keyword, docType, pageable)
+        val pattern = keyword?.trim()?.takeIf { it.isNotEmpty() }?.let { "%${it.lowercase()}%" }
+        val result = jpaRepository.searchDocuments(pattern, docType, pageable)
         return PageResult(
             content = result.content.map { DocumentMapper.toDomain(it) },
             pageNumber = result.number,

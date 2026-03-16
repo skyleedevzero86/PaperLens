@@ -10,13 +10,13 @@ interface DocumentJpaRepository : JpaRepository<DocumentEntity, Long> {
 
     @Query("""
         SELECT d FROM DocumentEntity d
-        WHERE (:keyword IS NULL OR
-               LOWER(d.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-               LOWER(d.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        WHERE (:pattern IS NULL OR
+               LOWER(d.title) LIKE :pattern OR
+               LOWER(d.description) LIKE :pattern)
         AND (:docType IS NULL OR d.documentType = :docType)
         ORDER BY d.createdAt DESC
     """)
-    fun searchDocuments(keyword: String?, docType: String?, pageable: Pageable): Page<DocumentEntity>
+    fun searchDocuments(pattern: String?, docType: String?, pageable: Pageable): Page<DocumentEntity>
 
     fun findByStatus(status: DocumentStatus): List<DocumentEntity>
     fun countByStatus(status: DocumentStatus): Long
