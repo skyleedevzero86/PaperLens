@@ -9,8 +9,8 @@ import com.sleekydz86.paperlens.domain.document.DocumentStatus
 import com.sleekydz86.paperlens.domain.port.DocumentChunkRepositoryPort
 import com.sleekydz86.paperlens.domain.port.DocumentRepositoryPort
 import org.apache.pdfbox.Loader
-import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.text.PDFTextStripper
+import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
@@ -23,6 +23,8 @@ class DocumentProcessAdapter(
     private val aiPort: AiPort,
     private val embeddingPort: EmbeddingPort,
 ) : DocumentProcessPort {
+
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     @Async
     override fun processAsync(documentId: Long) {
@@ -52,6 +54,7 @@ class DocumentProcessAdapter(
                 chunkRepository.updateEmbedding(chunk.id, embedding)
             }
         } catch (e: Exception) {
+            logger.error("문서 처리 실패: documentId={}", documentId, e)
             documentRepository.save(document.withStatus(DocumentStatus.FAILED))
         }
     }

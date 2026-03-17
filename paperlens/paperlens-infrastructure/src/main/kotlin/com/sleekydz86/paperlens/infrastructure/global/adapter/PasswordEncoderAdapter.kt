@@ -10,5 +10,5 @@ class PasswordEncoderAdapter(
 ) : PasswordEncoderPort {
 
     override fun encode(rawPassword: String): String =
-        delegate.encode(rawPassword) ?: error("Password encoder returned null")
+        delegate.encode(rawPassword) ?: error("비밀번호 인코더가 null을 반환했습니다.")
 }

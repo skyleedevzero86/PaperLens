@@ -29,8 +29,11 @@ class GlobalExceptionHandler {
         val msg = e.message ?: ""
         if (msg.contains("Embedding", ignoreCase = true) || msg.contains("임베딩", ignoreCase = true)) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(
-                ErrorResponse(if (msg.contains("임베딩")) msg else "임베딩이 비활성화되어 있습니다. 프로필 'embedding'으로 기동 후 ONNX 모델 URI를 설정하세요.")
+                ErrorResponse(if (msg.contains("임베딩")) msg else "임베딩이 비활성화되어 있습니다. 'no-embedding' 프로필을 제거하고 ONNX 모델/토크나이저 URI를 설정하세요.")
             )
+        }
+        if (msg.contains("파일", ignoreCase = true) || msg.contains("File not found", ignoreCase = true)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse(if (msg.contains("파일")) msg else "파일을 찾을 수 없습니다."))
         }
         throw e
     }

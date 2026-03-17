@@ -37,7 +37,7 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
                 it
-                    .requestMatchers("/api/auth/**", "/actuator/health").permitAll()
+                    .requestMatchers("/api/auth/**", "/actuator/health", "/error").permitAll()
                     .requestMatchers("/api/admin/**").hasRole("ADMIN")
                     .anyRequest().authenticated()
             }
