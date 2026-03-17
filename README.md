@@ -1,7 +1,6 @@
-# PaperLens (PdfStudy)
+# PaperLens
 
 ![PaperLens - AI 문서 검색 및 분석](imgs/이미지.jpg)
-
 
 ## 1. 프로젝트 소개
 
@@ -145,15 +144,15 @@ erDiagram
 
 ### 테이블 요약
 
-| 테이블             | 설명                                  |
-| ------------------ | ------------------------------------- |
-| `users`            | 사용자(이메일, 역할 등)               |
-| `documents`        | PDF 메타정보, 요약, 상태              |
-| `document_chunks`  | 문서를 나눈 텍스트 조각 + 벡터 임베딩 |
-| `document_tags`    | 문서별 태그                           |
-| `document_jobs`    | 인덱싱/처리 작업 큐                   |
-| `ai_query_logs`    | Q&A 질문·답변·응답시간 로그           |
-| `ai_model_configs` | 임베딩/챗 모델 설정                   |
+| 테이블             | 설명                                   |
+| ------------------ | -------------------------------------- |
+| `users`            | 사용자(이메일, 역할 등)                  |
+| `documents`        | PDF 메타정보, 요약, 상태                |
+| `document_chunks`  | 문서를 나눈 텍스트 조각 + 벡터 임베딩    |
+| `document_tags`    | 문서별 태그                            |
+| `document_jobs`    | 인덱싱/처리 작업 큐                     |
+| `ai_query_logs`    | Q&A 질문·답변·응답시간 로그             |
+| `ai_model_configs` | 임베딩/챗 모델 설정                     |
 
 ---
 
@@ -163,104 +162,91 @@ erDiagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                           Client (Browser)                               │
-│  Vue 3 + Vue Router + Pinia + Tailwind CSS + PDF.js + Chart.js           │
+│                           Client (Browser)                              │
+│  Vue 3 + Vue Router + Pinia + Tailwind CSS + PDF.js + Chart.js          │
 └─────────────────────────────────┬───────────────────────────────────────┘
-                                  │ HTTP /api/* (proxy → :8080)
+                                  │ HTTP /api/* (Vite proxy → backend :8080)
                                   ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     Backend (Spring Boot 3 + Kotlin)                      │
+┌──────────────────────────────────────────────────────────────────────────┐
+│                     Backend (Spring Boot 3 + Kotlin)                     │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────────────┐ │
 │  │ Auth        │ │ Document    │ │ Search      │ │ AI (Summary, QA,    │ │
 │  │ (JWT)       │ │ (CRUD, Job) │ │ (Hybrid)    │ │  Embedding, Similar)│ │
 │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────────────┘ │
 │  ┌─────────────┐ ┌─────────────┐                                         │
-│  │ Viewer      │ │ Admin       │  Spring Security, JPA, Spring AI       │
-│  │ (PDF serve) │ │ (Stats)      │                                         │
+│  │ Viewer      │ │ Admin       │  Spring Security, JPA, Spring AI        │
+│  │ (PDF serve) │ │ (Stats)      │                                        │
 │  └─────────────┘ └─────────────┘                                         │
-└──────────┬──────────────────────────────┬───────────────────┬──────────┘
+└──────────┬──────────────────────────────┬───────────────────┬────────────┘
            │                              │                   │
            ▼                              ▼                   ▼
-┌──────────────────────┐    ┌──────────────────────┐   ┌─────────────┐
-│  PostgreSQL 16       │    │  Redis 7              │   │  OpenAI API │
-│  + pgvector          │    │  (캐시/세션 등)        │   │  (선택)     │
-│  + Flyway migration  │    │                      │   │  Embedding  │
-└──────────────────────┘    └──────────────────────┘   │  Chat       │
-                                                        └─────────────┘
+┌──────────────────────┐    ┌──────────────────────┐   ┌─────────────────────┐
+│  PostgreSQL 16       │    │  Redis 7             │   │  AI (설정에 따라)    │
+│  + pgvector          │    │  (캐시/세션 등)       │   │  Hugging Face /     │
+│  + Flyway migration  │    │                      │   │  Transformers(ONNX) │
+└──────────────────────┘    └──────────────────────┘   └─────────────────────┘
 ```
 
 ### 스택 요약
 
-| 구분         | 기술                                                                                                            |
-| ------------ | --------------------------------------------------------------------------------------------------------------- |
-| **Frontend** | Vue 3, TypeScript, Vite, Vue Router, Pinia, Tailwind CSS, Axios, PDF.js, Chart.js, Lucide Icons                 |
-| **Backend**  | Spring Boot 3.3, Kotlin 2.0, Spring Security, JPA, Spring AI (OpenAI / Transformers), JWT, Flyway, PDFBox, Tika |
-| **DB**       | PostgreSQL 16 + pgvector (벡터 검색), Redis 7                                                                   |
-| **인프라**   | Docker Compose (PostgreSQL, Redis)                                                                              |
+| 구분         | 기술                                                                                                                   |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| **Frontend** | Vue 3, TypeScript, Vite 6, Vue Router, Pinia, Tailwind CSS, Axios, PDF.js (pdfjs-dist), Chart.js, VueUse, Lucide Icons |
+| **Backend**  | Spring Boot 3.5, Kotlin 2.2, Spring Security, JPA, Spring AI (Hugging Face / Transformers), JWT, Flyway, PDFBox, Tika  |
+| **DB**       | PostgreSQL 16 + pgvector (벡터 검색), Redis 7                                                                          |
+| **인프라**   | Docker Compose (PostgreSQL, Redis) — `docs/docker-compose.yml`                                                         |
 
 ---
 
 ## 5. 프로젝트 디렉터리 구조
 
-이 저장소(`PdfStudy`)는 PaperLens의 설계/실험용 공간으로, 실제 애플리케이션과 UI 프로토타입을 함께 관리합니다.
+이 저장소(`PaperLens`)는 PaperLens의 프론트엔드·백엔드·인프라를 한 워크스페이스에서 관리합니다.
 
 ```text
 PdfStudy/
 ├─ README.md                  # 현재 문서
-├─ frontend/                  # 최신 Vue 3 + Vite 기반 실제 SPA 프론트엔드
+├─ imgs/                      # README 이미지 자산
+│
+├─ frontend/                  # Vue 3 + Vite 기반 SPA (실제 서비스용)
 │  ├─ index.html
-│  ├─ vite.config.ts
+│  ├─ vite.config.ts          # dev 포트 5173, /api → localhost:8080 프록시
 │  ├─ tsconfig*.json
-│  ├─ src/
-│  │  ├─ main.ts              # 앱 엔트리
-│  │  ├─ App.vue
-│  │  ├─ router/              # 라우팅 (로그인, 문서 목록/상세, 관리자 등)
-│  │  ├─ stores/              # Pinia 스토어 (auth, document 등)
-│  │  ├─ layouts/             # `AppLayout` 등 공통 레이아웃
-│  │  ├─ views/               # 페이지 단위 뷰
-│  │  └─ components/          # 공통/도메인 컴포넌트
-│  └─ package.json            # `frontend` 앱 의존성 정의
+│  ├─ package.json            # pnpm, Vue 3, Vue Router, Pinia, Tailwind, Axios, pdfjs-dist, Chart.js 등
+│  └─ src/
+│     ├─ main.ts              # 앱 엔트리
+│     ├─ App.vue
+│     ├─ router/              # 라우팅 (로그인, 문서 목록/상세, 관리자)
+│     ├─ stores/              # Pinia (auth, document)
+│     ├─ layouts/             # AppLayout
+│     ├─ views/               # LoginView, DocumentListView, DocumentDetailView, AdminView
+│     ├─ components/          # document/, viewer/, ai/, admin/, common/
+│     ├─ lib/                 # api.ts (Axios 인스턴스, JWT 인터셉터)
+│     └─ types/               # 공통 타입
 │
-├─ docs/
-│  ├─ frontend/               # PaperLens UI/플로우를 문서화하는 샘플/데모 앱
-│  │  ├─ index.html
-│  │  ├─ vite.config.ts
-│  │  ├─ src/
-│  │  │  ├─ layouts/AppLayout.vue
-│  │  │  ├─ components/
-│  │  │  │  ├─ document/      # `DocumentCard`, `UploadModal` 등 문서 카드/업로드 UI
-│  │  │  │  ├─ viewer/        # `PdfViewer` 등 뷰어 관련 컴포넌트
-│  │  │  │  ├─ ai/            # `QaPanel`, `SimilarDocuments` 등 AI 패널
-│  │  │  │  └─ common/        # `StatusBadge` 등 공통 컴포넌트
-│  │  └─ package.json         # docs 용 프론트엔드 의존성
-│  └─ commit.md               # 프론트엔드 관련 커밋 요약 템플릿
-│
-└─ imgs/                      # README에서 사용하는 이미지 자산
+├─ paperlens/                 # 백엔드 (Gradle 멀티모듈, Kotlin + Spring Boot)
+   ├─ build.gradle.kts
+   ├─ settings.gradle.kts     # paperlens-domain, paperlens-application, paperlens-infrastructure
+   ├─ paperlens-domain/       # 도메인 엔티티·유스케이스
+   ├─ paperlens-application/  # 애플리케이션 서비스 계층
+   └─ paperlens-infrastructure/   # 실행 가능한 Spring Boot 앱 (REST, JPA, Security, Spring AI)
+      ├─ build.gradle.kts     # bootJar → paperlens-backend.jar
+      └─ src/main/resources/
+         └─ application.yml  # DB, JWT, Flyway, Spring AI( Hugging Face / Transformers ), pgvector
 ```
 
-간단히 요약하면:
+요약:
 
-- **`frontend/`**: 실제 서비스용 SPA 프론트엔드 코드
-- **`docs/frontend/`**: 문서/프로토타입용 프론트엔드 (UX 플로우를 설명하는 데 사용)
+- **`frontend/`**: 서비스용 SPA. `/api` 요청은 Vite 개발 서버가 백엔드(8080)로 프록시.
+- **`paperlens/`**: 백엔드. 실행 진입점은 `paperlens-infrastructure` (Spring Boot).
+- **`docs/docker-compose.yml`**: DB·Redis 로컬 실행용.
 
 ---
 
 ## 6. 백엔드 패키지 구조(요약)
 
-PaperLens 백엔드는 별도 모듈/저장소에서 관리되지만, 전반적인 패키지 구조는 다음과 같이 구성됩니다.
+PaperLens 백엔드는 이 저장소의 `paperlens/` Gradle 멀티모듈로 구성되며, 전반적인 패키지 구조는 다음과 같습니다.
 
-```mermaid
-flowchart TD
-    A[com.sleekydz86.paperlens] --> B[domain]
-    A --> C[application]
-    A --> D[infrastructure]
-
-    D --> D1[web\n(AuthController,\nDocumentController,\nSearchController,\nAiController,\nAdminController,\nViewerController)]
-    D --> D2[persistence\n(entity, repository,\nmapper, adapter)]
-    D --> D3[global.config\n(SecurityConfig,\nApplicationConfig,\nCustomUserDetailsService)]
-    D --> D4[global.adapter\n(PdfAdapter,\nEmbeddingAdapter,\nVectorSearchAdapter,\nFileStorageAdapter,\nTokenAdapter,\nAiAdapter,\nAuthAdapter,\nDocumentProcessAdapter,\nQueryLogAdapter)]
-    D --> D5[global.search\n(KeywordSearch,\nSemanticSearch,\nHybridSearch,\nFuzzySearch)]
-```
+<img width="1027" height="401" alt="image" src="https://github.com/user-attachments/assets/a01021fa-1614-4edb-924d-006b9d6a1b2c" />
 
 - **`web`**: REST 컨트롤러 계층 (인증, 문서, 검색, AI, 관리자, 뷰어 엔드포인트)
 - **`persistence`**: JPA 엔티티, 리포지토리, 매퍼, 도메인 리포지토리 어댑터
@@ -268,4 +254,4 @@ flowchart TD
 - **`global.adapter`**: PDF 파싱, 임베딩/벡터 검색, 파일 스토리지, 토큰 계산, AI/인증/배치 처리 어댑터
 - **`global.search`**: 키워드/의미/하이브리드/퍼지 검색 전략
 
-위 구조를 기준으로 프론트엔드(`frontend/`)는 `/api/*` 엔드포인트를 통해 백엔드의 `web` 계층과 통신하며, 검색/AI/문서 관리 흐름을 하나의 워크스페이스 UI로 묶어 제공합니다.
+프론트엔드(`frontend/`)는 `/api/*`로 백엔드(`paperlens-infrastructure`의 `web` 계층)와 통신하며, 검색·AI·문서 관리를 하나의 워크스페이스 UI로 제공합니다.
