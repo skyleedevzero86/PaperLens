@@ -3,6 +3,7 @@ package com.sleekydz86.paperlens.infrastructure.persistence.mapper
 import com.sleekydz86.paperlens.domain.document.Document
 import com.sleekydz86.paperlens.infrastructure.persistence.entity.DocumentEntity
 import com.sleekydz86.paperlens.infrastructure.persistence.entity.DocumentTagEntity
+import org.hibernate.Hibernate
 import java.time.LocalDateTime
 
 object DocumentMapper {
@@ -24,7 +25,7 @@ object DocumentMapper {
         createdAt = e.createdAt,
         updatedAt = e.updatedAt,
         deletedAt = e.deletedAt,
-        tagNames = e.tags.map { it.tagName },
+        tagNames = if (Hibernate.isInitialized(e.tags)) e.tags.map { it.tagName } else emptyList(),
     )
 
     fun toEntity(d: Document): DocumentEntity {

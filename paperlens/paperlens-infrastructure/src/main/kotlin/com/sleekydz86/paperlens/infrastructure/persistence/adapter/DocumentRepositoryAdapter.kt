@@ -8,12 +8,14 @@ import com.sleekydz86.paperlens.infrastructure.persistence.mapper.DocumentMapper
 import com.sleekydz86.paperlens.infrastructure.persistence.repository.DocumentJpaRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 
 @Component
 class DocumentRepositoryAdapter(
     private val jpaRepository: DocumentJpaRepository,
 ) : DocumentRepositoryPort {
 
+    @Transactional
     override fun save(document: Document): Document {
         val entity = if (document.id == 0L) {
             DocumentMapper.toEntity(document)
@@ -32,7 +34,8 @@ class DocumentRepositoryAdapter(
 
     override fun searchDocuments(keyword: String?, docType: String?, page: Int, size: Int): PageResult<Document> {
         val pageable = PageRequest.of(page, size)
-        val result = jpaRepository.searchDocuments(keyword, docType, pageable)
+        val pattern = keyword?.trim()?.takeIf { it.isNotEmpty() }?.let { "%${it.lowercase()}%" }
+        val result = jpaRepository.searchDocuments(pattern, docType, pageable)
         return PageResult(
             content = result.content.map { DocumentMapper.toDomain(it) },
             pageNumber = result.number,

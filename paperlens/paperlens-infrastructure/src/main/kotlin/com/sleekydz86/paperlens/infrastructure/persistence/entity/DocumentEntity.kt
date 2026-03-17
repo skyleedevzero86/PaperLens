@@ -48,4 +48,25 @@ class DocumentEntity(
 
     @OneToMany(mappedBy = "document", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     val chunks: MutableList<DocumentChunkEntity> = mutableListOf(),
-)
+) {
+    internal constructor() : this(
+        id = 0,
+        title = "",
+        description = null,
+        originalFileName = "",
+        storagePath = "",
+        mimeType = "application/pdf",
+        pageCount = 0,
+        fileSize = 0,
+        documentType = null,
+        summaryShort = null,
+        summaryLong = null,
+        status = DocumentStatus.PENDING,
+        createdBy = 0L,
+        createdAt = LocalDateTime.now(),
+        updatedAt = LocalDateTime.now(),
+        deletedAt = null,
+        tags = mutableListOf(),
+        chunks = mutableListOf(),
+    )
+}

@@ -1,7 +1,7 @@
 plugins {
 	kotlin("jvm") version "2.2.21"
 	kotlin("plugin.spring") version "2.2.21"
-	id("org.springframework.boot") version "4.0.3"
+	id("org.springframework.boot") version "3.5.6"
 	id("io.spring.dependency-management") version "1.1.7"
 }
 
@@ -17,9 +17,9 @@ dependencies {
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 
-	implementation("org.springframework.ai:spring-ai-pgvector-store-spring-boot-autoconfigure")
-	implementation("org.springframework.ai:spring-ai-transformers-spring-boot-autoconfigure")
-	implementation("org.springframework.ai:spring-ai-huggingface-spring-boot-autoconfigure")
+	implementation("org.springframework.ai:spring-ai-starter-vector-store-pgvector")
+	implementation("org.springframework.ai:spring-ai-starter-model-transformers")
+	implementation("org.springframework.ai:spring-ai-starter-model-huggingface")
 
 	implementation("io.jsonwebtoken:jjwt-api:0.12.6")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
@@ -34,8 +34,6 @@ dependencies {
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.security:spring-security-test")
-
-	implementation("org.springframework.ai:spring-ai-core")
 }
 
 dependencyManagement {
@@ -46,4 +44,10 @@ dependencyManagement {
 
 tasks.bootJar {
 	archiveFileName.set("paperlens-backend.jar")
+}
+
+tasks.test {
+	testLogging {
+		showStandardStreams = true
+	}
 }

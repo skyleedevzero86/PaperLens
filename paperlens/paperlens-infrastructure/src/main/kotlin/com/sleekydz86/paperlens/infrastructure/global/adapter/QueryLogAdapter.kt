@@ -4,12 +4,14 @@ import com.sleekydz86.paperlens.application.port.QueryLogPort
 import com.sleekydz86.paperlens.application.port.QueryLogStats
 import jakarta.persistence.EntityManager
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 
 @Component
 class QueryLogAdapter(
     private val entityManager: EntityManager,
 ) : QueryLogPort {
 
+    @Transactional
     override fun log(userId: Long, documentId: Long, question: String, answer: String, latencyMs: Long, modelName: String) {
         entityManager.createNativeQuery("""
             INSERT INTO ai_query_logs (user_id, document_id, question, answer, latency_ms, model_name, created_at)

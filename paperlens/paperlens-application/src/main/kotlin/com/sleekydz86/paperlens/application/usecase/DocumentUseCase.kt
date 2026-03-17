@@ -14,6 +14,8 @@ import com.sleekydz86.paperlens.domain.port.DocumentRepositoryPort
 import java.time.LocalDateTime
 import java.util.UUID
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 
 open class DocumentUseCase(
     private val documentRepository: DocumentRepositoryPort,
@@ -58,7 +60,7 @@ open class DocumentUseCase(
             tagNames = emptyList(),
         )
         val saved = documentRepository.save(document)
-        processPort.processAsync(saved.id)
+        runAfterCommit { processPort.processAsync(saved.id) }
         return saved.toResponse()
     }
 
@@ -108,6 +110,21 @@ open class DocumentUseCase(
         val bytes = fileStorage.read(document.storagePath)
             ?: throw IllegalStateException("파일을 찾을 수 없습니다: ${document.storagePath}")
         return Pair(document.originalFileName, bytes)
+    }
+
+    private fun runAfterCommit(action: () -> Unit) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            action()
+            return
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(
+            object : TransactionSynchronization {
+                override fun afterCommit() {
+                    action()
+                }
+            }
+        )
     }
 
     private fun Document.toResponse() = DocumentResponse(

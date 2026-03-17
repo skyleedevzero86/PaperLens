@@ -18,15 +18,15 @@ class HybridSearchStrategy(
     override val mode: SearchMode = SearchMode.HYBRID
 
     override fun search(request: SearchRequest): SearchResponse {
+        val docType = request.docType
         val embedding = embeddingPort.embed(request.query)
         val vectorStr = embedding.joinToString(",", "[", "]")
-        val docTypeFilter = if (request.docType != null) "AND d.document_type = ?" else ""
         val countSql = """
             SELECT COUNT(*) FROM documents d
             WHERE d.deleted_at IS NULL
               AND (?::text IS NULL OR d.document_type = ?)
         """.trimIndent()
-        val countArgs = arrayOf(request.docType, request.docType)
+        val countArgs = arrayOf(docType, docType)
         val totalElements = if (countArgs.isEmpty()) {
             jdbcTemplate.queryForObject(countSql, Long::class.java) ?: 0L
         } else {
@@ -34,7 +34,7 @@ class HybridSearchStrategy(
         }
         val totalPages = if (request.size > 0) ((totalElements + request.size - 1) / request.size).toInt() else 0
 
-        val docTypeParam = if (request.docType != null) "AND d.document_type = ?" else ""
+        val docTypeParam = if (docType != null) "AND d.document_type = ?" else ""
         val sql = """
             WITH keyword AS (
                 SELECT d.id,
@@ -68,10 +68,10 @@ class HybridSearchStrategy(
             LIMIT ? OFFSET ?
         """.trimIndent()
         val queryArgs = mutableListOf<Any>(request.query)
-        if (request.docType != null) queryArgs.add(request.docType)
+        if (docType != null) queryArgs.add(docType)
         queryArgs.addAll(listOf(vectorStr, request.query))
-        if (request.docType != null) queryArgs.add(request.docType)
-        if (request.docType != null) queryArgs.add(request.docType)
+        if (docType != null) queryArgs.add(docType)
+        if (docType != null) queryArgs.add(docType)
         queryArgs.addAll(listOf(request.size, request.page * request.size))
         val results = jdbcTemplate.query(sql, { rs, _ ->
             SearchResult(

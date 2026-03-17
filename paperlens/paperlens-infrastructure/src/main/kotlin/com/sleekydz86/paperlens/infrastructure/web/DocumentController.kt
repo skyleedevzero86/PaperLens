@@ -3,9 +3,11 @@ package com.sleekydz86.paperlens.infrastructure.web
 import com.sleekydz86.paperlens.application.dto.DocumentUpdateRequest
 import com.sleekydz86.paperlens.application.usecase.DocumentUseCase
 import com.sleekydz86.paperlens.infrastructure.persistence.entity.UserEntity
+import org.springframework.http.ContentDisposition
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import java.nio.charset.StandardCharsets
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
@@ -55,8 +57,11 @@ class DocumentController(private val documentUseCase: DocumentUseCase) {
     @GetMapping("/{id}/download")
     fun download(@PathVariable id: Long): ResponseEntity<ByteArray> {
         val (fileName, bytes) = documentUseCase.downloadFile(id)
+        val disposition = ContentDisposition.attachment()
+            .filename(fileName, StandardCharsets.UTF_8)
+            .build()
         return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$fileName\"")
+            .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
             .contentType(MediaType.APPLICATION_PDF)
             .body(bytes)
     }

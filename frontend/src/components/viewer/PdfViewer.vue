@@ -33,6 +33,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2 } from 'lucide-vue-next'
+import { api } from '@/lib/api'
 
 const props = defineProps<{ documentId: number }>()
 
@@ -53,8 +54,10 @@ async function loadPdf() {
       import.meta.url
     ).toString()
 
-    const url = `/api/viewer/${props.documentId}/stream`
-    pdfDoc = await pdfjsLib.getDocument(url).promise
+    const { data } = await api.get<ArrayBuffer>(`/viewer/${props.documentId}/stream`, {
+      responseType: 'arraybuffer',
+    })
+    pdfDoc = await pdfjsLib.getDocument({ data }).promise
     totalPages.value = pdfDoc.numPages
     await renderPage(1)
   } finally {

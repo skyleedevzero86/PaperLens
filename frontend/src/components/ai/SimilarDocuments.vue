@@ -3,6 +3,9 @@
     <div v-if="loading" class="flex justify-center py-8">
       <Loader2 class="w-6 h-6 animate-spin text-slate-300" />
     </div>
+    <div v-else-if="errorMessage" class="text-center py-6 text-sm text-amber-600">
+      {{ errorMessage }}
+    </div>
     <div v-else-if="documents.length === 0" class="text-center py-8 text-sm text-slate-400">
       유사한 문서가 없습니다.
     </div>
@@ -33,12 +36,17 @@ import type { SimilarDocument } from '@/types'
 const props = defineProps<{ documentId: number }>()
 const documents = ref<SimilarDocument[]>([])
 const loading = ref(false)
+const errorMessage = ref('')
 
 onMounted(async () => {
   loading.value = true
+  errorMessage.value = ''
   try {
     const res = await api.get<SimilarDocument[]>(`/ai/similar/${props.documentId}`)
     documents.value = res.data
+  } catch (err: any) {
+    const msg = err.response?.data?.message
+    errorMessage.value = typeof msg === 'string' ? msg : '유사 문서를 불러오는 중 오류가 발생했습니다.'
   } finally {
     loading.value = false
   }

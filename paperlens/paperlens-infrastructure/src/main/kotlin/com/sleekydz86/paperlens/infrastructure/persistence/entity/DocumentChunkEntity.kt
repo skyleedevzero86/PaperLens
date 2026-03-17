@@ -1,12 +1,14 @@
 package com.sleekydz86.paperlens.infrastructure.persistence.entity
 
 import jakarta.persistence.*
+import org.hibernate.annotations.DynamicInsert
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 import java.time.LocalDateTime
 
 @Entity
 @Table(name = "document_chunks")
+@DynamicInsert
 class DocumentChunkEntity(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
@@ -30,6 +32,14 @@ class DocumentChunkEntity(
 
     val createdAt: LocalDateTime = LocalDateTime.now(),
 ) {
+    internal constructor() : this(
+        document = DocumentEntity(),
+        pageFrom = 0,
+        pageTo = 0,
+        chunkIndex = 0,
+        content = "",
+    )
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

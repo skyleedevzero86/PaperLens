@@ -1,3 +1,4 @@
+uploads/
 application.yml
 paperlens-domain/gradle/
 paperlens-application/gradle/
@@ -7,6 +8,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+.gradle-user/
 
 ### STS ###
 .apt_generated

@@ -23,12 +23,12 @@
   }
   .btn-secondary {
     @apply inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-700 border border-slate-200
-           rounded-lg hover:bg-surface-50 transition-all font-medium text-sm shadow-sm/50;
+           rounded-lg hover:bg-surface-50 transition-all font-medium text-sm shadow-sm;
   }
   .input {
     @apply w-full px-3 py-2 border border-slate-200 rounded-lg text-sm
            focus:outline-none focus:ring-2 focus:ring-primary-500/70 focus:border-transparent
-           placeholder:text-slate-400 bg-white shadow-xs;
+           placeholder:text-slate-400 bg-white shadow-sm;
   }
   .card {
     @apply bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/80 shadow-sm;

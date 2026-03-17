@@ -16,7 +16,7 @@ class AdminController(private val adminUseCase: AdminUseCase) {
     @PostMapping("/documents/{id}/reprocess")
     fun reprocess(@PathVariable id: Long): ResponseEntity<Map<String, String>> {
         adminUseCase.reprocess(id)
-        return ResponseEntity.ok(mapOf("message" to "Reprocessing started"))
+        return ResponseEntity.ok(mapOf("message" to "재처리가 시작되었습니다."))
     }
 
     @GetMapping("/failed-documents")
