@@ -19,29 +19,30 @@ class HybridSearchStrategy(
 
     override fun search(request: SearchRequest): SearchResponse {
         val docType = request.docType
+        val tags = SearchSqlSupport.normalizeTags(request.tags)
         val embedding = embeddingPort.embed(request.query)
         val vectorStr = embedding.joinToString(",", "[", "]")
+        val docTypeParam = if (docType != null) "AND d.document_type = ?" else ""
+        val tagFilter = SearchSqlSupport.buildTagFilter("d", tags)
+
         val countSql = """
             SELECT COUNT(*) FROM documents d
             WHERE d.deleted_at IS NULL
               AND (?::text IS NULL OR d.document_type = ?)
+              $tagFilter
         """.trimIndent()
-        val countArgs = arrayOf(docType, docType)
-        val totalElements = if (countArgs.isEmpty()) {
-            jdbcTemplate.queryForObject(countSql, Long::class.java) ?: 0L
-        } else {
-            jdbcTemplate.queryForObject(countSql, Long::class.java, *countArgs) ?: 0L
-        }
+        val countArgs = mutableListOf<Any?>(docType, docType)
+        SearchSqlSupport.addTags(countArgs, tags)
+        val totalElements = jdbcTemplate.queryForObject(countSql, Long::class.java, *countArgs.toTypedArray()) ?: 0L
         val totalPages = if (request.size > 0) ((totalElements + request.size - 1) / request.size).toInt() else 0
 
-        val docTypeParam = if (docType != null) "AND d.document_type = ?" else ""
         val sql = """
             WITH keyword AS (
                 SELECT d.id,
                        ts_rank(to_tsvector('simple', coalesce(d.title,'') || ' ' || coalesce(d.description,'')),
                                plainto_tsquery('simple', ?)) * 0.5 AS lex_score
                 FROM documents d
-                WHERE deleted_at IS NULL $docTypeParam
+                WHERE d.deleted_at IS NULL $docTypeParam
             ),
             vector AS (
                 SELECT dc.document_id AS id,
@@ -54,35 +55,44 @@ class HybridSearchStrategy(
                 SELECT d.id,
                        similarity(d.title, ?) * 0.1 AS trgm_score
                 FROM documents d
-                WHERE deleted_at IS NULL $docTypeParam
+                WHERE d.deleted_at IS NULL $docTypeParam
             )
             SELECT d.id, d.title, d.summary_short, d.document_type,
+                   ${SearchSqlSupport.tagsProjection("d")},
                    COALESCE(k.lex_score,0) + COALESCE(v.vec_score,0) + COALESCE(t.trgm_score,0) AS score
             FROM documents d
             LEFT JOIN keyword k ON d.id = k.id
             LEFT JOIN vector v ON d.id = v.id
             LEFT JOIN trgm t ON d.id = t.id
             WHERE d.deleted_at IS NULL $docTypeParam
+              $tagFilter
               AND (COALESCE(k.lex_score,0) + COALESCE(v.vec_score,0) + COALESCE(t.trgm_score,0)) > 0
             ORDER BY score DESC
             LIMIT ? OFFSET ?
         """.trimIndent()
-        val queryArgs = mutableListOf<Any>(request.query)
+
+        val queryArgs = mutableListOf<Any?>(request.query)
         if (docType != null) queryArgs.add(docType)
-        queryArgs.addAll(listOf(vectorStr, request.query))
+        queryArgs.add(vectorStr)
+        queryArgs.add(request.query)
         if (docType != null) queryArgs.add(docType)
         if (docType != null) queryArgs.add(docType)
-        queryArgs.addAll(listOf(request.size, request.page * request.size))
+        SearchSqlSupport.addTags(queryArgs, tags)
+        queryArgs.add(request.size)
+        queryArgs.add(request.page * request.size)
+
         val results = jdbcTemplate.query(sql, { rs, _ ->
             SearchResult(
                 documentId = rs.getLong("id"),
                 title = rs.getString("title"),
                 summaryShort = rs.getString("summary_short"),
                 documentType = rs.getString("document_type"),
+                tags = SearchSqlSupport.parseTags(rs.getString("tags")),
                 score = rs.getDouble("score"),
                 highlights = emptyList(),
             )
         }, *queryArgs.toTypedArray())
+
         return SearchResponse(
             results = results,
             totalElements = totalElements,

@@ -2,6 +2,7 @@ package com.sleekydz86.paperlens.infrastructure.global.config
 
 import com.sleekydz86.paperlens.application.port.AiPort
 import com.sleekydz86.paperlens.application.port.AuthPort
+import com.sleekydz86.paperlens.application.port.DocumentJobPort
 import com.sleekydz86.paperlens.application.port.DocumentProcessPort
 import com.sleekydz86.paperlens.application.port.EmbeddingPort
 import com.sleekydz86.paperlens.application.port.FileStoragePort
@@ -22,7 +23,6 @@ import com.sleekydz86.paperlens.domain.port.UserRepositoryPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
-
 @Configuration
 class ApplicationConfig {
 
@@ -33,7 +33,9 @@ class ApplicationConfig {
         fileStorage: FileStoragePort,
         processPort: DocumentProcessPort,
         pdfPort: PdfPort,
-    ) = DocumentUseCase(documentRepository, chunkRepository, fileStorage, processPort, pdfPort)
+        documentJobPort: DocumentJobPort,
+        aiPort: AiPort,
+    ) = DocumentUseCase(documentRepository, chunkRepository, fileStorage, processPort, pdfPort, documentJobPort, aiPort)
 
     @Bean
     fun authUseCase(
@@ -49,8 +51,9 @@ class ApplicationConfig {
         embeddingPort: EmbeddingPort,
         vectorSearchPort: VectorSearchPort,
         documentRepository: DocumentRepositoryPort,
+        processPort: DocumentProcessPort,
         queryLogPort: QueryLogPort,
-    ) = AiUseCase(aiPort, embeddingPort, vectorSearchPort, documentRepository, queryLogPort)
+    ) = AiUseCase(aiPort, embeddingPort, vectorSearchPort, documentRepository, processPort, queryLogPort)
 
     @Bean
     fun searchUseCase(strategies: List<SearchStrategy>) = SearchUseCase(strategies)
@@ -60,5 +63,6 @@ class ApplicationConfig {
         documentRepository: DocumentRepositoryPort,
         queryLogPort: QueryLogPort,
         processPort: DocumentProcessPort,
-    ) = AdminUseCase(documentRepository, queryLogPort, processPort)
+        documentJobPort: DocumentJobPort,
+    ) = AdminUseCase(documentRepository, queryLogPort, processPort, documentJobPort)
 }

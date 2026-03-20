@@ -36,6 +36,7 @@ export interface SearchResult {
   title: string
   summaryShort: string | null
   documentType: string | null
+  tags: string[]
   score: number
   highlights: string[]
 }
@@ -50,6 +51,8 @@ export interface SearchResponse {
 export interface QaResponse {
   answer: string
   sources: ChunkSource[]
+  pending?: boolean
+  retryAfterMs?: number | null
 }
 
 export interface ChunkSource {
@@ -70,8 +73,20 @@ export interface AdminStats {
   totalDocuments: number
   indexedDocuments: number
   pendingDocuments: number
+  processingDocuments: number
   failedDocuments: number
   indexingRate: number
   totalQueries: number
   avgLatencyMs: number
+}
+
+export interface DocumentJob {
+  id: number
+  documentId: number
+  documentTitle: string
+  jobType: string
+  status: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED'
+  startedAt: string
+  finishedAt: string | null
+  errorMessage: string | null
 }

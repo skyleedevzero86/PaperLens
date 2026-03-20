@@ -15,7 +15,7 @@
           </a>
         </div>
       </div>
-      <PdfViewer :document-id="document.id" class="flex-1" />
+      <PdfViewer :document-id="document.id" :document-title="document.title" class="flex-1" />
     </div>
 
     <div class="w-96 flex flex-col overflow-hidden bg-white">
@@ -48,9 +48,11 @@
           <div>
             <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">정보</p>
             <div class="space-y-1 text-sm text-slate-600">
-              <div class="flex justify-between">
+              <div class="flex justify-between gap-4">
                 <span>파일명</span>
-                <span class="text-slate-800 truncate max-w-48" :title="document.originalFileName">{{ document.originalFileName }}</span>
+                <span class="text-slate-800 truncate max-w-48" :title="document.originalFileName">
+                  {{ document.originalFileName }}
+                </span>
               </div>
               <div class="flex justify-between">
                 <span>페이지 수</span>
@@ -77,7 +79,9 @@
                 v-for="tag in document.tags"
                 :key="tag"
                 class="px-2 py-0.5 bg-primary-50 text-primary-700 rounded-full text-xs"
-              >{{ tag }}</span>
+              >
+                {{ tag }}
+              </span>
             </div>
           </div>
         </div>
@@ -92,7 +96,7 @@
             <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{{ document.summaryLong }}</p>
           </div>
           <div v-if="!document.summaryShort && !document.summaryLong" class="text-center py-8 text-slate-400 text-sm">
-            요약이 아직 생성되지 않았습니다.
+            <p>{{ shouldRefreshDocument(document) ? '문서를 분석하는 중입니다. 잠시 후 자동으로 갱신됩니다.' : '요약이 아직 생성되지 않았습니다.' }}</p>
           </div>
         </div>
 
@@ -101,7 +105,7 @@
         </div>
 
         <div v-if="activeTab === 'similar'">
-          <SimilarDocuments :document-id="document.id" />
+          <SimilarDocuments :document-id="document.id" :document-status="document.status" />
         </div>
       </div>
     </div>
@@ -112,10 +116,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ChevronLeft, Download, Loader2 } from 'lucide-vue-next'
 import { useDocumentStore } from '@/stores/document'
+import type { DocumentDetail } from '@/types'
 import PdfViewer from '@/components/viewer/PdfViewer.vue'
 import QaPanel from '@/components/ai/QaPanel.vue'
 import SimilarDocuments from '@/components/ai/SimilarDocuments.vue'
@@ -123,7 +128,7 @@ import StatusBadge from '@/components/common/StatusBadge.vue'
 
 const route = useRoute()
 const store = useDocumentStore()
-const document = ref(store.currentDocument)
+const document = ref<DocumentDetail | null>(store.currentDocument)
 
 const activeTab = ref('summary')
 const tabs = [
@@ -133,14 +138,59 @@ const tabs = [
   { key: 'meta', label: '정보' },
 ]
 
+let refreshTimer: ReturnType<typeof setTimeout> | null = null
+let refreshAttempts = 0
+
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
+function shouldRefreshDocument(nextDocument: DocumentDetail | null) {
+  if (!nextDocument) return false
+  if (nextDocument.status === 'FAILED') return false
+  if (nextDocument.status === 'PENDING' || nextDocument.status === 'PROCESSING') return true
+  return !nextDocument.summaryShort && !nextDocument.summaryLong
+}
+
+function clearRefreshTimer() {
+  if (!refreshTimer) return
+  clearTimeout(refreshTimer)
+  refreshTimer = null
+}
+
+function scheduleRefresh() {
+  clearRefreshTimer()
+  if (!shouldRefreshDocument(document.value) || refreshAttempts >= 15) return
+
+  refreshTimer = setTimeout(async () => {
+    const id = Number(route.params.id)
+    refreshAttempts += 1
+    document.value = await store.fetchDocument(id)
+    scheduleRefresh()
+  }, 2000)
+}
+
 onMounted(async () => {
   const id = Number(route.params.id)
+  refreshAttempts = 0
   document.value = await store.fetchDocument(id)
+  scheduleRefresh()
+})
+
+watch(
+  () => route.params.id,
+  async (nextId) => {
+    const id = Number(nextId)
+    if (!id || Number.isNaN(id)) return
+    refreshAttempts = 0
+    document.value = await store.fetchDocument(id)
+    scheduleRefresh()
+  },
+)
+
+onBeforeUnmount(() => {
+  clearRefreshTimer()
 })
 </script>

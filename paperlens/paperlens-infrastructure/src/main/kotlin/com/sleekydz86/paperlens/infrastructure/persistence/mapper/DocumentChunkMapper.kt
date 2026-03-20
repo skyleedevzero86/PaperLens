@@ -1,6 +1,7 @@
 package com.sleekydz86.paperlens.infrastructure.persistence.mapper
 
 import com.sleekydz86.paperlens.domain.document.DocumentChunk
+import com.sleekydz86.paperlens.infrastructure.global.text.TextSanitizer
 import com.sleekydz86.paperlens.infrastructure.persistence.entity.DocumentChunkEntity
 import com.sleekydz86.paperlens.infrastructure.persistence.entity.DocumentEntity
 
@@ -12,7 +13,7 @@ object DocumentChunkMapper {
         pageFrom = e.pageFrom,
         pageTo = e.pageTo,
         chunkIndex = e.chunkIndex,
-        content = e.content,
+        content = TextSanitizer.sanitize(e.content),
         tokenCount = e.tokenCount,
         embedding = e.embedding,
         createdAt = e.createdAt,
@@ -24,7 +25,7 @@ object DocumentChunkMapper {
         pageFrom = d.pageFrom,
         pageTo = d.pageTo,
         chunkIndex = d.chunkIndex,
-        content = d.content,
+        content = TextSanitizer.sanitize(d.content),
         tokenCount = d.tokenCount,
         embedding = d.embedding,
         createdAt = d.createdAt,

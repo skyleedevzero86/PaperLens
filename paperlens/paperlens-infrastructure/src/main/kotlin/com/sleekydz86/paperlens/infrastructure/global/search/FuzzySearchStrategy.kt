@@ -16,33 +16,49 @@ class FuzzySearchStrategy(
     override val mode: SearchMode = SearchMode.FUZZY
 
     override fun search(request: SearchRequest): SearchResponse {
+        val tags = SearchSqlSupport.normalizeTags(request.tags)
+        val tagFilter = SearchSqlSupport.buildTagFilter("d", tags)
+
         val baseWhere = """
-            deleted_at IS NULL
+            d.deleted_at IS NULL
               AND (similarity(d.title, ?) > 0.1 OR similarity(coalesce(d.description,''), ?) > 0.1)
               AND (?::text IS NULL OR d.document_type = ?)
+              $tagFilter
         """.trimIndent()
+
         val countSql = "SELECT COUNT(*) FROM documents d WHERE $baseWhere"
-        val totalElements = jdbcTemplate.queryForObject(countSql, Long::class.java, request.query, request.query, request.docType, request.docType) ?: 0L
+        val countArgs = mutableListOf<Any?>(request.query, request.query, request.docType, request.docType)
+        SearchSqlSupport.addTags(countArgs, tags)
+        val totalElements = jdbcTemplate.queryForObject(countSql, Long::class.java, *countArgs.toTypedArray()) ?: 0L
         val totalPages = if (request.size > 0) ((totalElements + request.size - 1) / request.size).toInt() else 0
 
         val sql = """
             SELECT d.id, d.title, d.summary_short, d.document_type,
+                   ${SearchSqlSupport.tagsProjection("d")},
                    similarity(d.title, ?) AS score
             FROM documents d
             WHERE $baseWhere
             ORDER BY score DESC
             LIMIT ? OFFSET ?
         """.trimIndent()
+
+        val queryArgs = mutableListOf<Any?>(request.query, request.query, request.query, request.docType, request.docType)
+        SearchSqlSupport.addTags(queryArgs, tags)
+        queryArgs.add(request.size)
+        queryArgs.add(request.page * request.size)
+
         val results = jdbcTemplate.query(sql, { rs, _ ->
             SearchResult(
                 documentId = rs.getLong("id"),
                 title = rs.getString("title"),
                 summaryShort = rs.getString("summary_short"),
                 documentType = rs.getString("document_type"),
+                tags = SearchSqlSupport.parseTags(rs.getString("tags")),
                 score = rs.getDouble("score"),
                 highlights = emptyList(),
             )
-        }, request.query, request.query, request.docType, request.docType, request.size, request.page * request.size)
+        }, *queryArgs.toTypedArray())
+
         return SearchResponse(
             results = results,
             totalElements = totalElements,

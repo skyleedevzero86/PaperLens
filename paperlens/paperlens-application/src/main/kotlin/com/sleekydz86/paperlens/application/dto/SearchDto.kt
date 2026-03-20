@@ -6,6 +6,7 @@ data class SearchRequest(
     val query: String,
     val mode: SearchMode = SearchMode.HYBRID,
     val docType: String? = null,
+    val tags: List<String> = emptyList(),
     val page: Int = 0,
     val size: Int = 20
 )
@@ -15,6 +16,7 @@ data class SearchResult(
     val title: String,
     val summaryShort: String?,
     val documentType: String?,
+    val tags: List<String>,
     val score: Double,
     val highlights: List<String>
 )

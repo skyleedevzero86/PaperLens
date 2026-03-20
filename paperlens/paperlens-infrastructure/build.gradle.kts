@@ -11,6 +11,8 @@ dependencies {
 
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	implementation("org.springframework.boot:spring-boot-starter-data-redis")
+	implementation("org.springframework.session:spring-session-data-redis")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -29,7 +31,9 @@ dependencies {
 	implementation("org.flywaydb:flyway-core")
 	implementation("org.flywaydb:flyway-database-postgresql")
 
-	implementation("org.apache.pdfbox:pdfbox:3.0.3")
+	implementation("org.apache.pdfbox:pdfbox:3.0.3") {
+		exclude(group = "commons-logging", module = "commons-logging")
+	}
 	implementation("org.apache.tika:tika-core:2.9.2")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")

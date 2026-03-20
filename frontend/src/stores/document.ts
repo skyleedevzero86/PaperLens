@@ -13,12 +13,20 @@ export const useDocumentStore = defineStore('document', () => {
   async function fetchDocuments(params: {
     keyword?: string
     docType?: string
+    tags?: string[]
     page?: number
     size?: number
   } = {}) {
     loading.value = true
     try {
-      const res = await api.get<PageResponse<Document>>('/documents', { params })
+      const searchParams = new URLSearchParams()
+      if (params.keyword) searchParams.append('keyword', params.keyword)
+      if (params.docType) searchParams.append('docType', params.docType)
+      if (params.page !== undefined) searchParams.append('page', String(params.page))
+      if (params.size !== undefined) searchParams.append('size', String(params.size))
+      params.tags?.forEach(tag => searchParams.append('tags', tag))
+
+      const res = await api.get<PageResponse<Document>>('/documents', { params: searchParams })
       documents.value = res.data.content
       total.value = res.data.totalElements
       totalPages.value = res.data.totalPages

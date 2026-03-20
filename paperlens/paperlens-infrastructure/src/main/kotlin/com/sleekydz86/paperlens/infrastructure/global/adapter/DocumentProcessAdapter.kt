@@ -1,13 +1,17 @@
 package com.sleekydz86.paperlens.infrastructure.global.adapter
 
 import com.sleekydz86.paperlens.application.port.AiPort
+import com.sleekydz86.paperlens.application.port.DocumentJobPort
 import com.sleekydz86.paperlens.application.port.DocumentProcessPort
 import com.sleekydz86.paperlens.application.port.EmbeddingPort
 import com.sleekydz86.paperlens.application.port.FileStoragePort
 import com.sleekydz86.paperlens.domain.document.DocumentChunk
 import com.sleekydz86.paperlens.domain.document.DocumentStatus
+import com.sleekydz86.paperlens.domain.job.DocumentJobType
 import com.sleekydz86.paperlens.domain.port.DocumentChunkRepositoryPort
 import com.sleekydz86.paperlens.domain.port.DocumentRepositoryPort
+import com.sleekydz86.paperlens.infrastructure.global.cache.RedisCacheService
+import com.sleekydz86.paperlens.infrastructure.global.text.TextSanitizer
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.text.PDFTextStripper
 import org.slf4j.LoggerFactory
@@ -22,6 +26,8 @@ class DocumentProcessAdapter(
     private val fileStorage: FileStoragePort,
     private val aiPort: AiPort,
     private val embeddingPort: EmbeddingPort,
+    private val documentJobPort: DocumentJobPort,
+    private val redisCacheService: RedisCacheService,
 ) : DocumentProcessPort {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -32,30 +38,42 @@ class DocumentProcessAdapter(
         try {
             documentRepository.save(document.withStatus(DocumentStatus.PROCESSING))
             chunkRepository.deleteByDocumentId(documentId)
-            val bytes = fileStorage.read(document.storagePath) ?: throw IllegalStateException("파일을 찾을 수 없습니다.")
-            val chunks = extractAndChunk(documentId, bytes)
-            chunkRepository.saveAll(chunks)
 
-            val allText = chunks.joinToString("\n") { it.content }
-            if (allText.isNotBlank()) {
-                val summary = aiPort.summarizeText(allText)
-                val docType = aiPort.classifyDocumentType(allText)
-                documentRepository.save(
-                    document.withStatus(DocumentStatus.INDEXED)
-                        .withSummaries(summary.short, summary.long, docType)
-                )
-            } else {
-                documentRepository.save(document.withStatus(DocumentStatus.INDEXED))
+            val savedChunks = runTrackedJob(documentId, DocumentJobType.PARSE) {
+                val bytes = fileStorage.read(document.storagePath)
+                    ?: throw IllegalStateException("File not found: ${document.storagePath}")
+                val chunks = extractAndChunk(documentId, bytes)
+                chunkRepository.saveAll(chunks)
             }
 
-            val savedChunks = chunkRepository.findByDocumentIdOrderByChunkIndex(documentId)
-            savedChunks.forEach { chunk ->
-                val embedding = embeddingPort.embed(chunk.content)
-                chunkRepository.updateEmbedding(chunk.id, embedding)
+            val allText = savedChunks.joinToString("\n") { it.content }
+            val summaryResult = runTrackedJob(documentId, DocumentJobType.SUMMARY) {
+                if (allText.isBlank()) {
+                    SummaryResult(short = null, long = null, documentType = null)
+                } else {
+                    val summary = aiPort.summarizeText(allText)
+                    val docType = aiPort.classifyDocumentType(allText)
+                    SummaryResult(summary.short, summary.long, docType)
+                }
             }
+
+            runTrackedJob(documentId, DocumentJobType.EMBED) {
+                savedChunks.forEach { chunk ->
+                    val embedding = embeddingPort.embed(chunk.content)
+                    chunkRepository.updateEmbedding(chunk.id, embedding)
+                }
+            }
+
+            documentRepository.save(
+                document.withStatus(DocumentStatus.INDEXED)
+                    .withSummaries(summaryResult.short, summaryResult.long, summaryResult.documentType)
+            )
         } catch (e: Exception) {
-            logger.error("문서 처리 실패: documentId={}", documentId, e)
+            logger.error("Document processing failed: documentId={}", documentId, e)
+            documentJobPort.failPending(documentId, "Skipped because a previous step failed: ${e.message ?: "unknown error"}")
             documentRepository.save(document.withStatus(DocumentStatus.FAILED))
+        } finally {
+            redisCacheService.evictDocumentCaches()
         }
     }
 
@@ -70,7 +88,17 @@ class DocumentProcessAdapter(
                 val pageTo = minOf(pageFrom + 2, totalPages)
                 stripper.startPage = pageFrom
                 stripper.endPage = pageTo
-                val text = stripper.getText(pdf).trim()
+                val rawText = stripper.getText(pdf)
+                val sanitizedText = TextSanitizer.sanitize(rawText)
+                if (rawText.length != sanitizedText.length) {
+                    logger.warn(
+                        "Removed invalid control characters from extracted text: documentId={}, pageFrom={}, pageTo={}",
+                        documentId,
+                        pageFrom,
+                        pageTo,
+                    )
+                }
+                val text = sanitizedText.trim()
                 if (text.isNotBlank()) {
                     splitText(text, 1000).forEach { subText ->
                         chunks.add(
@@ -95,7 +123,27 @@ class DocumentProcessAdapter(
     }
 
     private fun splitText(text: String, maxLength: Int): List<String> {
-        if (text.length <= maxLength) return listOf(text)
-        return text.chunked(maxLength)
+        val sanitized = TextSanitizer.sanitize(text).trim()
+        if (sanitized.isBlank()) return emptyList()
+        if (sanitized.length <= maxLength) return listOf(sanitized)
+        return sanitized.chunked(maxLength)
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
     }
+
+    private fun <T> runTrackedJob(documentId: Long, jobType: DocumentJobType, action: () -> T): T {
+        val jobId = documentJobPort.start(documentId, jobType)
+        return try {
+            action().also { documentJobPort.complete(jobId) }
+        } catch (e: Exception) {
+            documentJobPort.fail(jobId, e.message)
+            throw e
+        }
+    }
+
+    private data class SummaryResult(
+        val short: String?,
+        val long: String?,
+        val documentType: String?,
+    )
 }
