@@ -5,6 +5,7 @@ import com.sleekydz86.paperlens.infrastructure.persistence.entity.DocumentEntity
 import com.sleekydz86.paperlens.infrastructure.persistence.entity.DocumentTagEntity
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 interface DocumentJpaRepository : JpaRepository<DocumentEntity, Long> {
@@ -42,6 +43,10 @@ interface DocumentJpaRepository : JpaRepository<DocumentEntity, Long> {
     @Query("SELECT DISTINCT dt.tagName FROM DocumentTagEntity dt ORDER BY dt.tagName")
     fun findAllTagNames(): List<String>
 
+    @EntityGraph(attributePaths = ["tags"])
+    override fun findById(id: Long): java.util.Optional<DocumentEntity>
+
+    @EntityGraph(attributePaths = ["tags"])
     fun findByStatus(status: DocumentStatus): List<DocumentEntity>
     fun countByStatus(status: DocumentStatus): Long
 }

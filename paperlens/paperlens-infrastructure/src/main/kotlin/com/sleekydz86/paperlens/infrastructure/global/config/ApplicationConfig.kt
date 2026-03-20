@@ -34,7 +34,8 @@ class ApplicationConfig {
         processPort: DocumentProcessPort,
         pdfPort: PdfPort,
         documentJobPort: DocumentJobPort,
-    ) = DocumentUseCase(documentRepository, chunkRepository, fileStorage, processPort, pdfPort, documentJobPort)
+        aiPort: AiPort,
+    ) = DocumentUseCase(documentRepository, chunkRepository, fileStorage, processPort, pdfPort, documentJobPort, aiPort)
 
     @Bean
     fun authUseCase(
@@ -50,8 +51,9 @@ class ApplicationConfig {
         embeddingPort: EmbeddingPort,
         vectorSearchPort: VectorSearchPort,
         documentRepository: DocumentRepositoryPort,
+        processPort: DocumentProcessPort,
         queryLogPort: QueryLogPort,
-    ) = AiUseCase(aiPort, embeddingPort, vectorSearchPort, documentRepository, queryLogPort)
+    ) = AiUseCase(aiPort, embeddingPort, vectorSearchPort, documentRepository, processPort, queryLogPort)
 
     @Bean
     fun searchUseCase(strategies: List<SearchStrategy>) = SearchUseCase(strategies)

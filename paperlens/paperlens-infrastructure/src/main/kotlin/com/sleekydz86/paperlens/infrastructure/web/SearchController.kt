@@ -27,7 +27,7 @@ class SearchController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
     ): ResponseEntity<Any> {
-        val mergedTags = (tags.orEmpty() + tag.orEmpty()).distinct()
+        val mergedTags = normalizeTagParams(tags, tag)
         val request = SearchRequest(query, mode, docType, mergedTags, page, size)
         redisCacheService.getSearch(request)?.let { return ResponseEntity.ok(it) }
 

@@ -4,6 +4,7 @@ import com.sleekydz86.paperlens.application.dto.DocumentDetailResponse
 import com.sleekydz86.paperlens.application.dto.DocumentResponse
 import com.sleekydz86.paperlens.application.dto.DocumentUpdateRequest
 import com.sleekydz86.paperlens.application.dto.PageResponse
+import com.sleekydz86.paperlens.application.port.AiPort
 import com.sleekydz86.paperlens.application.port.DocumentJobPort
 import com.sleekydz86.paperlens.application.port.DocumentProcessPort
 import com.sleekydz86.paperlens.application.port.FileStoragePort
@@ -26,6 +27,7 @@ open class DocumentUseCase(
     private val processPort: DocumentProcessPort,
     private val pdfPort: PdfPort,
     private val documentJobPort: DocumentJobPort,
+    private val aiPort: AiPort,
 ) {
 
     @Transactional
@@ -83,11 +85,11 @@ open class DocumentUseCase(
     @Transactional(readOnly = true)
     open fun getAvailableTags(): List<String> = documentRepository.findAllTagNames()
 
-    @Transactional(readOnly = true)
+    @Transactional
     open fun getDocument(id: Long): DocumentDetailResponse {
         val document = documentRepository.findById(id)
             ?: throw NoSuchElementException("臾몄꽌瑜?李얠쓣 ???놁뒿?덈떎: $id")
-        return document.toDetailResponse()
+        return ensureSummary(document).toDetailResponse()
     }
 
     @Transactional
@@ -138,6 +140,22 @@ open class DocumentUseCase(
         DEFAULT_JOB_TYPES.forEach { jobType ->
             documentJobPort.enqueue(documentId, jobType)
         }
+    }
+
+    private fun ensureSummary(document: Document): Document {
+        val needsSummary = document.summaryShort.isNullOrBlank() || document.summaryLong.isNullOrBlank()
+        val needsDocType = document.documentType.isNullOrBlank()
+        if (!needsSummary && !needsDocType) return document
+
+        val chunks = chunkRepository.findByDocumentIdOrderByChunkIndex(document.id)
+        val combinedText = chunks.joinToString("\n") { it.content }.trim()
+        if (combinedText.isBlank()) return document
+
+        val summary = aiPort.summarizeText(combinedText)
+        val documentType = if (needsDocType) aiPort.classifyDocumentType(combinedText) else document.documentType
+        return documentRepository.save(
+            document.withSummaries(summary.short, summary.long, documentType)
+        )
     }
 
     private fun Document.toResponse() = DocumentResponse(

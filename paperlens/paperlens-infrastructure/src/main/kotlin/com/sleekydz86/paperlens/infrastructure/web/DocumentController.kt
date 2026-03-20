@@ -56,7 +56,7 @@ class DocumentController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
     ): ResponseEntity<Any> {
-        val normalizedTags = (tags.orEmpty() + tag.orEmpty()).distinct()
+        val normalizedTags = normalizeTagParams(tags, tag)
         redisCacheService.getDocumentList(keyword, docType, normalizedTags, page, size)
             ?.let { return ResponseEntity.ok(it) }
 

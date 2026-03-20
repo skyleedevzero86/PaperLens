@@ -4,9 +4,11 @@ import com.sleekydz86.paperlens.application.dto.QaRequest
 import com.sleekydz86.paperlens.application.dto.QaResponse
 import com.sleekydz86.paperlens.application.dto.SimilarDocumentResult
 import com.sleekydz86.paperlens.application.port.AiPort
+import com.sleekydz86.paperlens.application.port.DocumentProcessPort
 import com.sleekydz86.paperlens.application.port.EmbeddingPort
 import com.sleekydz86.paperlens.application.port.QueryLogPort
 import com.sleekydz86.paperlens.application.port.VectorSearchPort
+import com.sleekydz86.paperlens.domain.document.Document
 import com.sleekydz86.paperlens.domain.document.DocumentStatus
 import com.sleekydz86.paperlens.domain.port.DocumentRepositoryPort
 
@@ -15,16 +17,21 @@ class AiUseCase(
     private val embeddingPort: EmbeddingPort,
     private val vectorSearchPort: VectorSearchPort,
     private val documentRepository: DocumentRepositoryPort,
+    private val processPort: DocumentProcessPort,
     private val queryLogPort: QueryLogPort,
 ) {
 
     fun answerQuestion(request: QaRequest): QaResponse {
         val document = documentRepository.findById(request.documentId)
             ?: throw NoSuchElementException("문서를 찾을 수 없습니다.")
+
         if (document.status != DocumentStatus.INDEXED) {
+            triggerProcessingIfNeeded(document)
             return QaResponse(
-                answer = "문서 인덱싱이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.",
+                answer = "문서를 인덱싱하는 중입니다. 잠시 후 자동으로 다시 시도합니다.",
                 sources = emptyList(),
+                pending = true,
+                retryAfterMs = 2000,
             )
         }
 
@@ -44,18 +51,28 @@ class AiUseCase(
     }
 
     fun findSimilarDocuments(documentId: Long, limit: Int = 5): List<SimilarDocumentResult> {
-        val doc = documentRepository.findById(documentId)
+        val document = documentRepository.findById(documentId)
             ?: throw NoSuchElementException("문서를 찾을 수 없습니다.")
-        if (doc.status != DocumentStatus.INDEXED) {
+        if (document.status != DocumentStatus.INDEXED) {
+            triggerProcessingIfNeeded(document)
             return emptyList()
         }
 
-        val queryText = doc.summaryShort ?: doc.title
+        val queryText = document.summaryShort ?: document.title
         val queryVector = embeddingPort.embed(queryText)
         return vectorSearchPort.findSimilarDocuments(documentId, queryVector, limit)
     }
 
     fun logQuery(userId: Long, documentId: Long, question: String, answer: String, latencyMs: Long, modelName: String) {
         queryLogPort.log(userId, documentId, question, answer, latencyMs, modelName)
+    }
+
+    private fun triggerProcessingIfNeeded(document: Document) {
+        if (document.status != DocumentStatus.PENDING && document.status != DocumentStatus.FAILED) {
+            return
+        }
+
+        val processingDocument = documentRepository.save(document.withStatus(DocumentStatus.PROCESSING))
+        processPort.processAsync(processingDocument.id)
     }
 }

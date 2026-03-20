@@ -21,12 +21,14 @@ class AdminUseCase(
         val total = documentRepository.count()
         val indexed = documentRepository.countByStatus(DocumentStatus.INDEXED)
         val pending = documentRepository.countByStatus(DocumentStatus.PENDING)
+        val processing = documentRepository.countByStatus(DocumentStatus.PROCESSING)
         val failed = documentRepository.countByStatus(DocumentStatus.FAILED)
         val logStats = queryLogPort.getStats()
         return AdminStatsResponse(
             totalDocuments = total,
             indexedDocuments = indexed,
             pendingDocuments = pending,
+            processingDocuments = processing,
             failedDocuments = failed,
             indexingRate = if (total > 0) indexed * 100.0 / total else 0.0,
             totalQueries = logStats.totalQueries,

@@ -13,7 +13,9 @@ data class QaRequest(
 
 data class QaResponse(
     val answer: String,
-    val sources: List<ChunkSource>
+    val sources: List<ChunkSource>,
+    val pending: Boolean = false,
+    val retryAfterMs: Long? = null,
 )
 
 data class ChunkSource(

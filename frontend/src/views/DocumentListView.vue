@@ -68,6 +68,9 @@
           >
             {{ tag }}
           </button>
+          <span v-if="availableTags.length === 0" class="text-xs text-slate-400">
+            No tags available yet.
+          </span>
         </div>
       </div>
     </div>
@@ -113,7 +116,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Search, Upload, FileText, Loader2 } from 'lucide-vue-next'
 import { useDocumentStore } from '@/stores/document'
 import { api } from '@/lib/api'
@@ -121,6 +124,7 @@ import type { SearchResult } from '@/types'
 import DocumentCard from '@/components/document/DocumentCard.vue'
 import UploadModal from '@/components/document/UploadModal.vue'
 
+const route = useRoute()
 const router = useRouter()
 const store = useDocumentStore()
 
@@ -136,6 +140,28 @@ const isSearchMode = ref(false)
 
 let debounceTimer: ReturnType<typeof setTimeout>
 
+function parseRouteTags(value: unknown): string[] {
+  const rawValues = Array.isArray(value) ? value : value ? [value] : []
+  return [...new Set(
+    rawValues
+      .flatMap((entry) => String(entry).split(','))
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+  )]
+}
+
+function syncRouteQuery() {
+  const query: Record<string, string | string[] | undefined> = {}
+
+  if (searchQuery.value.trim()) query.query = searchQuery.value.trim()
+  if (searchQuery.value.trim()) query.mode = searchMode.value
+  if (docTypeFilter.value) query.docType = docTypeFilter.value
+  if (selectedTags.value.length > 0) query.tags = selectedTags.value
+  if (!searchQuery.value.trim() && currentPage.value > 0) query.page = String(currentPage.value)
+
+  void router.replace({ query })
+}
+
 function debounceSearch() {
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(doSearch, 400)
@@ -150,6 +176,7 @@ function buildParams() {
 
 async function doSearch() {
   const params = buildParams()
+  syncRouteQuery()
 
   if (searchQuery.value.trim()) {
     isSearchMode.value = true
@@ -220,6 +247,7 @@ async function handleDelete(id: number) {
 
 async function goPage(page: number) {
   currentPage.value = page
+  syncRouteQuery()
   await store.fetchDocuments({
     page,
     docType: docTypeFilter.value || undefined,
@@ -233,9 +261,13 @@ function onUploadSuccess() {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    loadAvailableTags(),
-    store.fetchDocuments(),
-  ])
+  searchQuery.value = typeof route.query.query === 'string' ? route.query.query : ''
+  searchMode.value = typeof route.query.mode === 'string' ? route.query.mode : 'HYBRID'
+  docTypeFilter.value = typeof route.query.docType === 'string' ? route.query.docType : ''
+  selectedTags.value = parseRouteTags(route.query.tags ?? route.query.tag)
+  currentPage.value = typeof route.query.page === 'string' ? Number(route.query.page) || 0 : 0
+
+  await loadAvailableTags()
+  await doSearch()
 })
 </script>

@@ -10,10 +10,12 @@ import { computed } from 'vue'
 const props = defineProps<{ status: string }>()
 
 const config: Record<string, { label: string; class: string }> = {
-  PENDING:    { label: '대기', class: 'bg-yellow-50 text-yellow-700' },
-  PROCESSING: { label: '처리중', class: 'bg-blue-50 text-blue-700' },
-  INDEXED:    { label: '완료', class: 'bg-green-50 text-green-700' },
-  FAILED:     { label: '실패', class: 'bg-red-50 text-red-700' },
+  PENDING: { label: '대기', class: 'bg-yellow-50 text-yellow-700' },
+  PROCESSING: { label: '처리 중', class: 'bg-blue-50 text-blue-700' },
+  INDEXED: { label: '완료', class: 'bg-green-50 text-green-700' },
+  RUNNING: { label: '진행 중', class: 'bg-blue-50 text-blue-700' },
+  SUCCESS: { label: '성공', class: 'bg-green-50 text-green-700' },
+  FAILED: { label: '실패', class: 'bg-red-50 text-red-700' },
 }
 
 const badgeClass = computed(() => config[props.status]?.class || 'bg-slate-100 text-slate-600')

@@ -4,6 +4,7 @@ data class AdminStatsResponse(
     val totalDocuments: Long,
     val indexedDocuments: Long,
     val pendingDocuments: Long,
+    val processingDocuments: Long,
     val failedDocuments: Long,
     val indexingRate: Double,
     val totalQueries: Long,
